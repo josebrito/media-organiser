@@ -13,6 +13,7 @@ export default function OrganiseMedia() {
     destinationFolder: "",
     moveFiles: false,
     sameAsSource: true,
+    renameFiles: true,
   });
   const [dateExtractionResult, setDateExtractionResult] = useState<DateExtractionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);

@@ -13,6 +13,7 @@ export interface MediaProcessorConfig {
   maxProjectNameLength: number;
   dryRun: boolean;
   moveFiles: boolean;
+  renameFiles: boolean;
   name?: string;
   sourceFolder?: string;
   destinationFolder?: string;
@@ -49,6 +50,7 @@ export class MediaProcessor {
       maxProjectNameLength: 50,
       dryRun: false,
       moveFiles: false,
+      renameFiles: true,
     };
   }
 
@@ -363,6 +365,23 @@ export class MediaProcessor {
   private async generateUniqueFilename(folderPath: string, originalName: string, prefix: string): Promise<string> {
     const ext = path.extname(originalName);
     const baseName = path.basename(originalName, ext);
+
+    if (!this.config.renameFiles) {
+      // Use original name with conflict resolution
+      let filename = originalName;
+      let fullPath = path.join(folderPath, filename);
+      let counter = 1;
+
+      while (await this.fileExists(fullPath)) {
+        filename = `${baseName}_${counter}${ext}`;
+        fullPath = path.join(folderPath, filename);
+        counter++;
+      }
+
+      return filename;
+    }
+
+    // Original rename logic with prefix
     let counter = 1;
     let filename = `${prefix}_${originalName}`;
     let fullPath = path.join(folderPath, filename);

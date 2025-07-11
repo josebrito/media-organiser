@@ -14,6 +14,7 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
   const [destinationFolder, setDestinationFolder] = useState(config.destinationFolder);
   const [sameAsSource, setSameAsSource] = useState(config.sameAsSource);
   const [moveFiles, setMoveFiles] = useState(config.moveFiles);
+  const [renameFiles, setRenameFiles] = useState(config.renameFiles ?? true);
 
   useEffect(() => {
     if (sameAsSource && sourceFolder) {
@@ -26,12 +27,14 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
     destinationFolder: string;
     moveFiles: boolean;
     sameAsSource: boolean;
+    renameFiles: boolean;
   }) => {
     const finalConfig: Configuration = {
       sourceFolder: values.sourceFolder,
       destinationFolder: values.sameAsSource ? values.sourceFolder : values.destinationFolder,
       moveFiles: values.moveFiles || false,
       sameAsSource: values.sameAsSource,
+      renameFiles: values.renameFiles ?? true,
     };
     onSubmit(finalConfig);
   };
@@ -86,6 +89,7 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
       setDestinationFolder("");
       setSameAsSource(true);
       setMoveFiles(false);
+      setRenameFiles(true);
       await showToast({
         style: Toast.Style.Success,
         title: "Saved configuration cleared",
@@ -156,6 +160,14 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
         label="Move files instead of copying them"
         value={moveFiles}
         onChange={setMoveFiles}
+      />
+
+      <Form.Checkbox
+        id="renameFiles"
+        title="Rename files"
+        label="Rename files with project prefix"
+        value={renameFiles}
+        onChange={setRenameFiles}
       />
 
       <Form.Description text="To select folders: 1) Open Finder and navigate to the desired folder, 2) Select the folder, 3) Click the 'Select Source/Destination Folder' action below, 4) Click 'Extract Dates' to scan the source folder and find all distinct creation dates." />

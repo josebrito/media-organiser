@@ -10,6 +10,7 @@ export interface Configuration {
   destinationFolder: string;
   moveFiles: boolean;
   sameAsSource: boolean;
+  renameFiles: boolean;
 }
 
 export interface ProjectAssignment {

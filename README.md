@@ -8,6 +8,7 @@ A Raycast extension and CLI tool for organizing photos and videos by their captu
 - **RAW File Support**: Handles camera RAW formats (RAF, CR2, NEF, ARW, etc.) using exiftool
 - **Video Metadata**: Extracts dates from video files (MP4, MOV, AVI, etc.) using ffprobe
 - **File Organization**: Groups files into date-based folders with project names
+- **Flexible File Naming**: Option to rename files with project prefix or keep original names
 - **Safety Checks**: Disk space validation, permission checks, and duplicate filename handling
 - **Flexible Operations**: Copy or move files with dry-run support
 - **Multiple Interfaces**: Both Raycast extension and standalone CLI
@@ -90,6 +91,7 @@ npm run cli:group <source_folder> <destination_folder> [options]
 Options:
 
 - `--move`: Move files instead of copying
+- `--no-rename`: Keep original filenames (don't add project prefix)
 - `--mapping <file>`: Use JSON file for date→project mapping
 
 Examples:
@@ -114,6 +116,12 @@ npm run cli:group /path/to/photos /path/to/organized --mapping mapping.json
 
 ```bash
 npm run cli:group /path/to/photos /path/to/organized --move
+```
+
+**Keep original filenames**:
+
+```bash
+npm run cli:group /path/to/photos /path/to/organized --no-rename
 ```
 
 ## Architecture
@@ -186,6 +194,7 @@ interface MediaProcessorConfig {
   maxProjectNameLength: number; // Max length for project names
   dryRun: boolean; // Preview mode without file changes
   moveFiles: boolean; // Move vs copy files
+  renameFiles: boolean; // Whether to rename files with project prefix
   name?: string; // Global project name
   sourceFolder?: string; // Source directory
   destinationFolder?: string; // Destination directory

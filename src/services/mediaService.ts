@@ -51,6 +51,7 @@ export class MediaService {
 
       const processorConfig = MediaProcessor.getDefaultConfig();
       processorConfig.moveFiles = config.moveFiles;
+      processorConfig.renameFiles = config.renameFiles;
 
       const processor = new MediaProcessor(processorConfig);
       await processor.groupFiles(config.sourceFolder, config.destinationFolder, mapping);
