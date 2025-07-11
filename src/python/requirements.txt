@@ -1,0 +1,6 @@
+click
+pillow
+rawpy
+python-dateutil
+tqdm
+pymediainfo 
