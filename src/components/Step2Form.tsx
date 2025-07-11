@@ -45,8 +45,7 @@ export function Step2Form({ dates, onSubmit, onBack, isLoading }: Step2FormProps
         <Form.TextField
           key={date.toISOString()}
           id={`project_${date.toISOString()}`}
-          title={`Project name for ${formatDate(date)}`}
-          placeholder={`Enter project name for ${formatDate(date)}`}
+          placeholder={`${formatDate(date)}`}
           value={projectNames[`project_${date.toISOString()}`] || ""}
           onChange={(value) =>
             setProjectNames((prev) => ({
@@ -56,10 +55,6 @@ export function Step2Form({ dates, onSubmit, onBack, isLoading }: Step2FormProps
           }
         />
       ))}
-
-      <Form.Description
-        text={`Found ${dates.length} distinct dates. Assign a project name to each date, then click 'Organize Files' to process your media files.`}
-      />
     </Form>
   );
 }

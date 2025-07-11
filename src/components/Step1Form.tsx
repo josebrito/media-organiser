@@ -130,16 +130,14 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
 
       <Form.TextField
         id="sourceFolder"
-        title="Source Folder"
-        placeholder="Select a folder in Finder, then click 'Select Source Folder'"
+        placeholder="Select source folder in Finder"
         value={sourceFolder}
         onChange={setSourceFolder}
       />
 
       <Form.Checkbox
         id="sameAsSource"
-        title="Same as source"
-        label="Use the same folder for destination"
+        label="Destination is same as source"
         value={sameAsSource}
         onChange={setSameAsSource}
       />
@@ -148,29 +146,15 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
         <Form.TextField
           id="destinationFolder"
           title="Destination Folder"
-          placeholder="Select a folder in Finder, then click 'Select Destination Folder'"
+          placeholder="Select destination folder"
           value={destinationFolder}
           onChange={setDestinationFolder}
         />
       )}
 
-      <Form.Checkbox
-        id="moveFiles"
-        title="Move files"
-        label="Move files instead of copying them"
-        value={moveFiles}
-        onChange={setMoveFiles}
-      />
+      <Form.Checkbox id="moveFiles" label="Move files" value={moveFiles} onChange={setMoveFiles} />
 
-      <Form.Checkbox
-        id="renameFiles"
-        title="Rename files"
-        label="Rename files with project prefix"
-        value={renameFiles}
-        onChange={setRenameFiles}
-      />
-
-      <Form.Description text="To select folders: 1) Open Finder and navigate to the desired folder, 2) Select the folder, 3) Click the 'Select Source/Destination Folder' action below, 4) Click 'Extract Dates' to scan the source folder and find all distinct creation dates." />
+      <Form.Checkbox id="renameFiles" label="Rename files" value={renameFiles} onChange={setRenameFiles} />
     </Form>
   );
 }
