@@ -6,9 +6,10 @@ interface Step1FormProps {
   config: Configuration;
   onSubmit: (config: Configuration) => void;
   isLoading: boolean;
+  onClearSavedConfig?: () => void;
 }
 
-export function Step1Form({ config, onSubmit, isLoading }: Step1FormProps) {
+export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: Step1FormProps) {
   const [sourceFolder, setSourceFolder] = useState(config.sourceFolder);
   const [destinationFolder, setDestinationFolder] = useState(config.destinationFolder);
   const [sameAsSource, setSameAsSource] = useState(config.sameAsSource);
@@ -77,6 +78,22 @@ export function Step1Form({ config, onSubmit, isLoading }: Step1FormProps) {
     }
   };
 
+  const handleClearSavedConfig = async () => {
+    if (onClearSavedConfig) {
+      onClearSavedConfig();
+      // Reset form to default values
+      setSourceFolder("");
+      setDestinationFolder("");
+      setSameAsSource(true);
+      setMoveFiles(false);
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Saved configuration cleared",
+        message: "Form reset to default values",
+      });
+    }
+  };
+
   return (
     <Form
       isLoading={isLoading}
@@ -93,6 +110,13 @@ export function Step1Form({ config, onSubmit, isLoading }: Step1FormProps) {
               title="Select Destination Folder"
               onAction={selectDestinationFolder}
               shortcut={{ modifiers: ["cmd"], key: "d" }}
+            />
+          )}
+          {onClearSavedConfig && (
+            <Action
+              title="Clear Saved Configuration"
+              onAction={handleClearSavedConfig}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
             />
           )}
         </ActionPanel>

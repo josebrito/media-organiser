@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { showToast, Toast } from "@raycast/api";
 import { Configuration, ProjectAssignment, DateExtractionResult } from "./types";
 import { MediaService } from "./services/mediaService";
+import { ConfigStorage } from "./services/configStorage";
 import { Step1Form } from "./components/Step1Form";
 import { Step2Form } from "./components/Step2Form";
 
@@ -16,12 +17,32 @@ export default function OrganiseMedia() {
   const [dateExtractionResult, setDateExtractionResult] = useState<DateExtractionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load last used configuration on component mount
+  useEffect(() => {
+    const loadLastConfig = async () => {
+      try {
+        const lastConfig = await ConfigStorage.loadLastUsedConfig();
+        if (lastConfig) {
+          setConfig(lastConfig);
+        }
+      } catch (error) {
+        console.error("Failed to load last used configuration:", error);
+      }
+    };
+
+    loadLastConfig();
+  }, []);
+
   const handleStep1Submit = async (configuration: Configuration) => {
     setIsLoading(true);
     try {
       const result = await MediaService.extractCreationDates(configuration.sourceFolder);
       setDateExtractionResult(result);
       setConfig(configuration);
+
+      // Save the configuration for next use
+      await ConfigStorage.saveLastUsedConfig(configuration);
+
       setCurrentStep(2);
       await showToast({
         style: Toast.Style.Success,
@@ -67,8 +88,23 @@ export default function OrganiseMedia() {
     setDateExtractionResult(null);
   };
 
+  const handleClearSavedConfig = async () => {
+    try {
+      await ConfigStorage.clearLastUsedConfig();
+    } catch (error) {
+      console.error("Failed to clear saved configuration:", error);
+    }
+  };
+
   if (currentStep === 1) {
-    return <Step1Form config={config} onSubmit={handleStep1Submit} isLoading={isLoading} />;
+    return (
+      <Step1Form
+        config={config}
+        onSubmit={handleStep1Submit}
+        isLoading={isLoading}
+        onClearSavedConfig={handleClearSavedConfig}
+      />
+    );
   }
 
   if (currentStep === 2 && dateExtractionResult) {
