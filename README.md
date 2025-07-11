@@ -1,6 +1,6 @@
 # Media Organiser
 
-A Raycast extension and CLI tool for organizing photos and videos by their capture date. Built with TypeScript/Node.js for optimal performance and integration.
+A Raycast extension for organizing photos and videos by their capture date. Built with TypeScript/Node.js for optimal performance and integration.
 
 ## Features
 
@@ -11,7 +11,6 @@ A Raycast extension and CLI tool for organizing photos and videos by their captu
 - **Flexible File Naming**: Option to rename files with project prefix or keep original names
 - **Safety Checks**: Disk space validation, permission checks, and duplicate filename handling
 - **Flexible Operations**: Copy or move files with dry-run support
-- **Multiple Interfaces**: Both Raycast extension and standalone CLI
 
 ## Installation
 
@@ -61,69 +60,6 @@ npm install
 4. Assign project names to dates
 5. Choose to copy or move files
 
-### CLI Usage
-
-The CLI provides comprehensive media organization functionality:
-
-#### Extract Dates
-
-Extract unique creation dates from files in a folder:
-
-```bash
-npm run cli:extract-dates <source_folder>
-```
-
-Example:
-
-```bash
-npm run cli:extract-dates /path/to/photos
-# Output: ["20231201", "20231202", "20231203"]
-```
-
-#### Group Files
-
-Organize files based on date→project mapping:
-
-```bash
-npm run cli:group <source_folder> <destination_folder> [options]
-```
-
-Options:
-
-- `--move`: Move files instead of copying
-- `--no-rename`: Keep original filenames (don't add project prefix)
-- `--mapping <file>`: Use JSON file for date→project mapping
-
-Examples:
-
-**Interactive mode** (prompts for project names):
-
-```bash
-npm run cli:group /path/to/photos /path/to/organized
-```
-
-**Using mapping file**:
-
-```bash
-# Create mapping.json
-echo '{"20231201": "Vacation", "20231202": "Birthday"}' > mapping.json
-
-# Use mapping file
-npm run cli:group /path/to/photos /path/to/organized --mapping mapping.json
-```
-
-**Move files instead of copying**:
-
-```bash
-npm run cli:group /path/to/photos /path/to/organized --move
-```
-
-**Keep original filenames**:
-
-```bash
-npm run cli:group /path/to/photos /path/to/organized --no-rename
-```
-
 ## Architecture
 
 ### Core Components
@@ -137,11 +73,6 @@ npm run cli:group /path/to/photos /path/to/organized --no-rename
 2. **MediaService** (`src/services/mediaService.ts`): Raycast integration layer
    - Converts between Raycast types and processor types
    - Handles async operations for UI
-
-3. **CLI Interface** (`src/cli.ts`): Command-line interface
-   - Uses Commander.js for argument parsing
-   - Interactive prompts with Inquirer.js
-   - Colored output with Chalk
 
 ### Supported File Types
 
