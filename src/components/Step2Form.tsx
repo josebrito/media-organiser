@@ -21,12 +21,12 @@ export function Step2Form({ dates, onSubmit, onBack, isLoading }: Step2FormProps
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    // Format as YYYYMMDD for folder naming
+    return (
+      date.getFullYear().toString() +
+      (date.getMonth() + 1).toString().padStart(2, "0") +
+      date.getDate().toString().padStart(2, "0")
+    );
   };
 
   return (
@@ -41,20 +41,24 @@ export function Step2Form({ dates, onSubmit, onBack, isLoading }: Step2FormProps
     >
       <Form.Description text="Step 2: Assign project names to each date" />
 
-      {dates.map((date) => (
-        <Form.TextField
-          key={date.toISOString()}
-          id={`project_${date.toISOString()}`}
-          placeholder={`${formatDate(date)}`}
-          value={projectNames[`project_${date.toISOString()}`] || ""}
-          onChange={(value) =>
-            setProjectNames((prev) => ({
-              ...prev,
-              [`project_${date.toISOString()}`]: value,
-            }))
-          }
-        />
-      ))}
+      {dates
+        .slice()
+        .sort((a, b) => a.getTime() - b.getTime())
+        .map((date) => (
+          <Form.TextField
+            key={date.toISOString()}
+            id={`project_${date.toISOString()}`}
+            title={formatDate(date)}
+            placeholder="Project Name"
+            value={projectNames[`project_${date.toISOString()}`] || ""}
+            onChange={(value) =>
+              setProjectNames((prev) => ({
+                ...prev,
+                [`project_${date.toISOString()}`]: value,
+              }))
+            }
+          />
+        ))}
     </Form>
   );
 }

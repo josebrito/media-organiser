@@ -22,6 +22,11 @@ export interface MediaProcessorConfig {
 export class MediaProcessor {
   private config: MediaProcessorConfig;
 
+  // File extension constants to avoid duplication
+  private static readonly JPEG_EXTENSIONS = [".jpg", ".jpeg"];
+  private static readonly RAW_EXTENSIONS = [".raf", ".gpr", ".raw", ".cr2", ".nef", ".arw"];
+  private static readonly VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm", ".m4v"];
+
   constructor(config: MediaProcessorConfig) {
     this.config = config;
   }
@@ -52,6 +57,57 @@ export class MediaProcessor {
       moveFiles: false,
       renameFiles: true,
     };
+  }
+
+  /**
+   * Utility method to format date as YYYYMMDD string
+   */
+  private formatDateAsString(date: Date): string {
+    return (
+      date.getFullYear().toString() +
+      (date.getMonth() + 1).toString().padStart(2, "0") +
+      date.getDate().toString().padStart(2, "0")
+    );
+  }
+
+  /**
+   * Utility method to get date-only part of a Date object
+   */
+  private getDateOnly(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  /**
+   * Utility method to check if a date is valid
+   */
+  private isValidDate(date: Date): boolean {
+    return !isNaN(date.getTime());
+  }
+
+  /**
+   * Utility method to check if file extension matches any in the given array
+   */
+  private hasExtension(filePath: string, extensions: string[]): boolean {
+    const ext = path.extname(filePath).toLowerCase();
+    return extensions.includes(ext);
+  }
+
+  /**
+   * Utility method for consistent error logging
+   */
+  private logError(message: string, error?: unknown): void {
+    if (error) {
+      console.error(message, error);
+    } else {
+      console.error(message);
+    }
+  }
+
+  /**
+   * Utility method for consistent info logging
+   */
+  private logInfo(message: string): void {
+    console.log(message);
   }
 
   /**
@@ -88,7 +144,7 @@ export class MediaProcessor {
           }
         }
       } catch (error) {
-        console.error(`Error scanning directory ${dir}:`, error);
+        this.logError(`Error scanning directory ${dir}:`, error);
         throw error;
       }
     };
@@ -101,32 +157,30 @@ export class MediaProcessor {
    * Extract creation date from media file using multiple methods
    */
   async getMediaDate(filePath: string): Promise<Date> {
-    const ext = path.extname(filePath).toLowerCase();
-
     try {
       // 1. Try EXIF data for JPEG images
-      if (ext === ".jpg" || ext === ".jpeg") {
+      if (this.hasExtension(filePath, MediaProcessor.JPEG_EXTENSIONS)) {
         const exifDate = await this.getExifDate(filePath);
         if (exifDate) {
-          console.log(`EXIF date for ${path.basename(filePath)}: ${exifDate}`);
+          this.logInfo(`EXIF date for ${path.basename(filePath)}: ${exifDate}`);
           return exifDate;
         }
       }
 
       // 2. Try RAW metadata for RAW files
-      if ([".raf", ".gpr", ".raw", ".cr2", ".nef", ".arw"].includes(ext)) {
+      if (this.hasExtension(filePath, MediaProcessor.RAW_EXTENSIONS)) {
         const rawDate = await this.getRawDate(filePath);
         if (rawDate) {
-          console.log(`RAW metadata date for ${path.basename(filePath)}: ${rawDate}`);
+          this.logInfo(`RAW metadata date for ${path.basename(filePath)}: ${rawDate}`);
           return rawDate;
         }
       }
 
       // 3. Try video metadata for video files
-      if ([".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm", ".m4v"].includes(ext)) {
+      if (this.hasExtension(filePath, MediaProcessor.VIDEO_EXTENSIONS)) {
         const videoDate = await this.getVideoDate(filePath);
         if (videoDate) {
-          console.log(`Video metadata date for ${path.basename(filePath)}: ${videoDate}`);
+          this.logInfo(`Video metadata date for ${path.basename(filePath)}: ${videoDate}`);
           return videoDate;
         }
       }
@@ -134,10 +188,10 @@ export class MediaProcessor {
       // 4. Fallback to file creation date
       const stats = await fs.promises.stat(filePath);
       const creationDate = new Date(stats.birthtime);
-      console.log(`Using file creation date for ${path.basename(filePath)}: ${creationDate}`);
+      this.logInfo(`Using file creation date for ${path.basename(filePath)}: ${creationDate}`);
       return creationDate;
     } catch (error) {
-      console.error(`Warning: Could not get creation date for ${filePath}:`, error);
+      this.logError(`Warning: Could not get creation date for ${filePath}:`, error);
       return new Date();
     }
   }
@@ -158,7 +212,7 @@ export class MediaProcessor {
       });
 
       if (!exif) {
-        console.log(`No EXIF data found in ${path.basename(filePath)}`);
+        this.logInfo(`No EXIF data found in ${path.basename(filePath)}`);
         return null;
       }
 
@@ -176,12 +230,12 @@ export class MediaProcessor {
             // EXIF dates are typically in format: YYYY:MM:DD HH:MM:SS
             const dateStr = value.replace(/:/, " ").replace(/:/, " "); // Replace first two colons with spaces
             const parsedDate = new Date(dateStr);
-            if (!isNaN(parsedDate.getTime())) {
-              console.log(`  Using ${field} date: ${parsedDate}`);
+            if (this.isValidDate(parsedDate)) {
+              this.logInfo(`  Using ${field} date: ${parsedDate}`);
               return parsedDate;
             }
           } catch {
-            console.log(`  Error parsing ${field} date`);
+            this.logInfo(`  Error parsing ${field} date`);
             continue;
           }
         }
@@ -189,7 +243,7 @@ export class MediaProcessor {
 
       return null;
     } catch (error) {
-      console.error(`Error reading EXIF from ${path.basename(filePath)}:`, error);
+      this.logError(`Error reading EXIF from ${path.basename(filePath)}:`, error);
       return null;
     }
   }
@@ -211,7 +265,7 @@ export class MediaProcessor {
       const result = JSON.parse(stdout);
       if (result && result[0] && result[0].DateTimeOriginal) {
         const date = new Date(result[0].DateTimeOriginal);
-        if (!isNaN(date.getTime())) {
+        if (this.isValidDate(date)) {
           return date;
         }
       }
@@ -219,7 +273,7 @@ export class MediaProcessor {
       return null;
     } catch {
       // exiftool not available or failed, fall back to file creation date
-      console.log(
+      this.logInfo(
         `Note: exiftool not available for RAW metadata extraction. Using file creation date for ${path.basename(filePath)}.`,
       );
       return null;
@@ -252,7 +306,7 @@ export class MediaProcessor {
           if (value && typeof value === "string") {
             try {
               const date = new Date(value);
-              if (!isNaN(date.getTime())) {
+              if (this.isValidDate(date)) {
                 return date;
               }
             } catch {
@@ -264,7 +318,7 @@ export class MediaProcessor {
 
       return null;
     } catch {
-      console.error(`Warning: Could not extract video metadata from ${filePath}`);
+      this.logError(`Warning: Could not extract video metadata from ${filePath}`);
       return null;
     }
   }
@@ -279,7 +333,7 @@ export class MediaProcessor {
       const dstStats = await fs.promises.statfs(dstDir);
       return dstStats.bavail * dstStats.bsize > srcStats.size;
     } catch (error) {
-      console.error("Error checking disk space:", error);
+      this.logError("Error checking disk space:", error);
       return false;
     }
   }
@@ -303,7 +357,7 @@ export class MediaProcessor {
    */
   async safeCopyFile(src: string, dst: string): Promise<void> {
     if (this.config.dryRun) {
-      console.log(`Would ${this.config.moveFiles ? "move" : "copy"} ${src} to ${dst}`);
+      this.logInfo(`Would ${this.config.moveFiles ? "move" : "copy"} ${src} to ${dst}`);
       return;
     }
 
@@ -324,13 +378,13 @@ export class MediaProcessor {
       // Copy or move the file
       if (this.config.moveFiles) {
         await fs.promises.rename(src, dst);
-        console.log(`Moved ${src} to ${dst}`);
+        this.logInfo(`Moved ${src} to ${dst}`);
       } else {
         await fs.promises.copyFile(src, dst);
-        console.log(`Copied ${src} to ${dst}`);
+        this.logInfo(`Copied ${src} to ${dst}`);
       }
     } catch (error) {
-      console.error(`Error processing ${src}:`, error);
+      this.logError(`Error processing ${src}:`, error);
       throw error;
     }
   }
@@ -339,11 +393,7 @@ export class MediaProcessor {
    * Create a folder named YYYYMMDD_PROJECT_NAME in the base directory
    */
   async createDateFolder(baseDir: string, date: Date, projectName: string): Promise<string> {
-    const dateStr =
-      date.getFullYear().toString() +
-      (date.getMonth() + 1).toString().padStart(2, "0") +
-      date.getDate().toString().padStart(2, "0");
-
+    const dateStr = this.formatDateAsString(date);
     const folderName = `${dateStr}_${projectName}`;
     const folderPath = path.join(baseDir, folderName);
 
@@ -351,10 +401,10 @@ export class MediaProcessor {
       if (!this.config.dryRun) {
         await fs.promises.mkdir(folderPath, { recursive: true });
       }
-      console.log(`Created/accessed folder: ${folderPath}`);
+      this.logInfo(`Created/accessed folder: ${folderPath}`);
       return folderPath;
     } catch (error) {
-      console.error(`Error creating folder ${folderPath}:`, error);
+      this.logError(`Error creating folder ${folderPath}:`, error);
       throw error;
     }
   }
@@ -417,14 +467,11 @@ export class MediaProcessor {
     for (const file of files) {
       try {
         const mediaDate = await this.getMediaDate(file);
-        const dateOnly = new Date(mediaDate.getFullYear(), mediaDate.getMonth(), mediaDate.getDate());
-        const dateStr =
-          dateOnly.getFullYear().toString() +
-          (dateOnly.getMonth() + 1).toString().padStart(2, "0") +
-          dateOnly.getDate().toString().padStart(2, "0");
+        const dateOnly = this.getDateOnly(mediaDate);
+        const dateStr = this.formatDateAsString(dateOnly);
         uniqueDates.add(dateStr);
       } catch (error) {
-        console.error(`Error processing file ${file}:`, error);
+        this.logError(`Error processing file ${file}:`, error);
         continue;
       }
     }
@@ -450,18 +497,15 @@ export class MediaProcessor {
         const mediaDate = await this.getMediaDate(file);
         fileDateMapping.set(file, mediaDate);
       } catch (error) {
-        console.error(`Error getting date for ${file}:`, error);
+        this.logError(`Error getting date for ${file}:`, error);
         continue;
       }
     }
 
     // Process each file
     for (const [file, mediaDate] of fileDateMapping) {
-      const dateOnly = new Date(mediaDate.getFullYear(), mediaDate.getMonth(), mediaDate.getDate());
-      const dateStr =
-        dateOnly.getFullYear().toString() +
-        (dateOnly.getMonth() + 1).toString().padStart(2, "0") +
-        dateOnly.getDate().toString().padStart(2, "0");
+      const dateOnly = this.getDateOnly(mediaDate);
+      const dateStr = this.formatDateAsString(dateOnly);
 
       const projectName = projectNames[dateStr];
       if (!projectName) {
@@ -476,6 +520,6 @@ export class MediaProcessor {
       await this.safeCopyFile(file, destFile);
     }
 
-    console.log("Processing completed");
+    this.logInfo("Processing completed");
   }
 }
