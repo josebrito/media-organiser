@@ -6,7 +6,7 @@ import { ConfigStorage } from "./services/configStorage";
 import { Step1Form } from "./components/Step1Form";
 import { Step2Form } from "./components/Step2Form";
 
-export default function OrganiseMedia() {
+export default function GroupByCaptureDate() {
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [config, setConfig] = useState<Configuration>({
     sourceFolder: "",

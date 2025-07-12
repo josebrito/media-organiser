@@ -8,9 +8,9 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "organise-media",
-      "title": "Organise Media",
-      "subtitle": "Finder",
+      "name": "group-by-capture-date",
+      "title": "Group by Capture Date",
+      "subtitle": "Media Organiser",
       "description": "Sorts photos and videos in folders according to their capture date",
       "mode": "view"
     }
