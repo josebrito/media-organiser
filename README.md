@@ -26,7 +26,7 @@ A Raycast extension for organizing photos and videos by their capture date.
 **Images:**
 
 - JPEG (.jpg, .jpeg) - EXIF metadata extraction
-- RAW formats (.raf, .raw, .cr2, .nef, .arw, .gpr) - Uses `exiftool` for metadata extraction
+- RAW formats (.raf, .raw, .cr2, .nef, .arw, .gpr) - Uses `exifr` for metadata extraction
 
 **Videos:**
 
@@ -47,21 +47,6 @@ A Raycast extension for organizing photos and videos by their capture date.
 
 ```bash
 npm install
-```
-
-#### `exiftool`
-
-Also requires `exiftool` to be installed in your system. Follow these steps to install:
-
-```bash
-# macOS
-brew install exiftool
-
-# Ubuntu/Debian
-sudo apt-get install exiftool
-
-# Windows
-# Download from https://exiftool.org/
 ```
 
 ### Building

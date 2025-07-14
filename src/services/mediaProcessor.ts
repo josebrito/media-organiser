@@ -9,14 +9,8 @@ import ffprobe from "ffprobe-static";
 const execFileAsync = promisify(execFile);
 
 export interface MediaProcessorConfig {
-  imageExtensions: Set<string>;
-  maxProjectNameLength: number;
-  dryRun: boolean;
   moveFiles: boolean;
   renameFiles: boolean;
-  name?: string;
-  sourceFolder?: string;
-  destinationFolder?: string;
 }
 
 export class MediaProcessor {
@@ -26,6 +20,25 @@ export class MediaProcessor {
   private static readonly JPEG_EXTENSIONS = [".jpg", ".jpeg"];
   private static readonly RAW_EXTENSIONS = [".raf", ".gpr", ".raw", ".cr2", ".nef", ".arw"];
   private static readonly VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm", ".m4v"];
+  private static readonly IMAGE_EXTENSIONS = [
+    ".jpg",
+    ".jpeg",
+    ".dng",
+    ".raf",
+    ".raw",
+    ".cr2",
+    ".nef",
+    ".arw",
+    ".gpr",
+    ".mp4",
+    ".mov",
+    ".avi",
+    ".mkv",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".m4v",
+  ];
 
   constructor(config: MediaProcessorConfig) {
     this.config = config;
@@ -33,27 +46,6 @@ export class MediaProcessor {
 
   static getDefaultConfig(): MediaProcessorConfig {
     return {
-      imageExtensions: new Set([
-        ".jpg",
-        ".jpeg",
-        ".dng",
-        ".raf",
-        ".raw",
-        ".cr2",
-        ".nef",
-        ".arw",
-        ".gpr",
-        ".mp4",
-        ".mov",
-        ".avi",
-        ".mkv",
-        ".wmv",
-        ".flv",
-        ".webm",
-        ".m4v",
-      ]),
-      maxProjectNameLength: 50,
-      dryRun: false,
       moveFiles: false,
       renameFiles: true,
     };
@@ -138,7 +130,7 @@ export class MediaProcessor {
             await scanDirectory(fullPath);
           } else if (entry.isFile()) {
             const ext = path.extname(entry.name).toLowerCase();
-            if (this.config.imageExtensions.has(ext)) {
+            if (MediaProcessor.IMAGE_EXTENSIONS.includes(ext)) {
               files.add(fullPath);
             }
           }
@@ -253,29 +245,52 @@ export class MediaProcessor {
    */
   private async getRawDate(filePath: string): Promise<Date | null> {
     try {
-      // Use exiftool if available, otherwise fall back to file creation date
-      const { stdout } = await execFileAsync("exiftool", [
-        "-DateTimeOriginal",
-        "-d",
-        "%Y:%m:%d %H:%M:%S",
-        "-j",
-        filePath,
-      ]);
+      const exif = await exifr.parse(filePath, {
+        tiff: true, // RAW files often use TIFF/EXIF structure
+        exif: true,
+        xmp: false,
+        icc: false,
+        ihdr: false,
+        iptc: false,
+        jfif: false,
+      });
 
-      const result = JSON.parse(stdout);
-      if (result && result[0] && result[0].DateTimeOriginal) {
-        const date = new Date(result[0].DateTimeOriginal);
-        if (this.isValidDate(date)) {
-          return date;
+      if (!exif) {
+        this.logInfo(`No EXIF data found in RAW file ${path.basename(filePath)}`);
+        return null;
+      }
+
+      // Try different EXIF date fields in order of preference
+      const dateFields = [
+        "DateTimeOriginal", // When the image was taken
+        "DateTimeDigitized", // When the image was digitized
+        "DateTime", // When the file was modified
+      ];
+
+      for (const field of dateFields) {
+        const value = exif[field];
+        if (value && typeof value === "string" && value.trim()) {
+          try {
+            // EXIF dates are typically in format: YYYY:MM:DD HH:MM:SS
+            const dateStr = value.replace(/:/, " ").replace(/:/, " "); // Replace first two colons with spaces
+            const parsedDate = new Date(dateStr);
+            if (this.isValidDate(parsedDate)) {
+              this.logInfo(`  Using ${field} date from RAW: ${parsedDate}`);
+              return parsedDate;
+            }
+          } catch {
+            this.logInfo(`  Error parsing ${field} date in RAW`);
+            continue;
+          }
+        } else if (value instanceof Date && this.isValidDate(value)) {
+          this.logInfo(`  Using ${field} date from RAW: ${value}`);
+          return value;
         }
       }
 
       return null;
-    } catch {
-      // exiftool not available or failed, fall back to file creation date
-      this.logInfo(
-        `Note: exiftool not available for RAW metadata extraction. Using file creation date for ${path.basename(filePath)}.`,
-      );
+    } catch (error) {
+      this.logError(`Error reading EXIF from RAW file ${path.basename(filePath)}:`, error);
       return null;
     }
   }
@@ -356,11 +371,6 @@ export class MediaProcessor {
    * Safely copy or move a file with proper error handling
    */
   async safeCopyFile(src: string, dst: string): Promise<void> {
-    if (this.config.dryRun) {
-      this.logInfo(`Would ${this.config.moveFiles ? "move" : "copy"} ${src} to ${dst}`);
-      return;
-    }
-
     try {
       // Check available disk space
       if (!(await this.hasEnoughDiskSpace(src, dst))) {
@@ -398,9 +408,7 @@ export class MediaProcessor {
     const folderPath = path.join(baseDir, folderName);
 
     try {
-      if (!this.config.dryRun) {
-        await fs.promises.mkdir(folderPath, { recursive: true });
-      }
+      await fs.promises.mkdir(folderPath, { recursive: true });
       this.logInfo(`Created/accessed folder: ${folderPath}`);
       return folderPath;
     } catch (error) {
