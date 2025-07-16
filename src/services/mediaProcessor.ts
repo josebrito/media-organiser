@@ -3,8 +3,6 @@ import path from "path";
 import os from "os";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import exifr from "exifr";
-import ffprobe from "ffprobe-static";
 
 const execFileAsync = promisify(execFile);
 
@@ -146,38 +144,73 @@ export class MediaProcessor {
   }
 
   /**
-   * Extract creation date from media file using multiple methods
+   * Extract creation date from media file using exiftool for all types
+   */
+  private async getExiftoolDate(filePath: string): Promise<Date | null> {
+    try {
+      // exiftool -j outputs JSON, -d "%Y-%m-%dT%H:%M:%S" for consistent date format
+      const { stdout } = await execFileAsync("exiftool", ["-j", "-d", "%Y-%m-%dT%H:%M:%S", filePath], {
+        env: {
+          ...process.env,
+          // Prefer EXIFTOOL_PATH from .env.local, then PATH
+          PATH: process.env.EXIFTOOL_PATH || process.env.PATH,
+        },
+      });
+      const metadata = JSON.parse(stdout)[0];
+      // Try common date fields in order of preference
+      const dateFields = [
+        "DateTimeOriginal",
+        "CreateDate",
+        "MediaCreateDate",
+        "TrackCreateDate",
+        "ModifyDate",
+        "FileModifyDate",
+        "FileCreateDate",
+        "CreationDate",
+        "CreationTime",
+        "DateCreated",
+        "DateTime",
+      ];
+      for (const field of dateFields) {
+        const value = metadata[field];
+        if (value && typeof value === "string") {
+          const parsedDate = new Date(value);
+          if (this.isValidDate(parsedDate)) {
+            this.logInfo(`Using ${field} from exiftool for ${path.basename(filePath)}: ${parsedDate}`);
+            return parsedDate;
+          }
+        }
+      }
+      this.logInfo(`No suitable date found in exiftool output for ${path.basename(filePath)}`);
+      return null;
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code?: unknown }).code === "ENOENT"
+      ) {
+        this.logError(
+          `exiftool is not installed or not found in PATH. Please install exiftool to enable metadata extraction.`,
+          error,
+        );
+      } else {
+        this.logError(`Error running exiftool on ${filePath}:`, error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Extract creation date from media file using exiftool for all types
    */
   async getMediaDate(filePath: string): Promise<Date> {
     try {
-      // 1. Try EXIF data for JPEG images
-      if (this.hasExtension(filePath, MediaProcessor.JPEG_EXTENSIONS)) {
-        const exifDate = await this.getExifDate(filePath);
-        if (exifDate) {
-          this.logInfo(`EXIF date for ${path.basename(filePath)}: ${exifDate}`);
-          return exifDate;
-        }
+      const exiftoolDate = await this.getExiftoolDate(filePath);
+      if (exiftoolDate) {
+        return exiftoolDate;
       }
-
-      // 2. Try RAW metadata for RAW files
-      if (this.hasExtension(filePath, MediaProcessor.RAW_EXTENSIONS)) {
-        const rawDate = await this.getRawDate(filePath);
-        if (rawDate) {
-          this.logInfo(`RAW metadata date for ${path.basename(filePath)}: ${rawDate}`);
-          return rawDate;
-        }
-      }
-
-      // 3. Try video metadata for video files
-      if (this.hasExtension(filePath, MediaProcessor.VIDEO_EXTENSIONS)) {
-        const videoDate = await this.getVideoDate(filePath);
-        if (videoDate) {
-          this.logInfo(`Video metadata date for ${path.basename(filePath)}: ${videoDate}`);
-          return videoDate;
-        }
-      }
-
-      // 4. Fallback to file creation date
+      // Fallback to file creation date
       const stats = await fs.promises.stat(filePath);
       const creationDate = new Date(stats.birthtime);
       this.logInfo(`Using file creation date for ${path.basename(filePath)}: ${creationDate}`);
@@ -185,156 +218,6 @@ export class MediaProcessor {
     } catch (error) {
       this.logError(`Warning: Could not get creation date for ${filePath}:`, error);
       return new Date();
-    }
-  }
-
-  /**
-   * Extract date from EXIF data
-   */
-  private async getExifDate(filePath: string): Promise<Date | null> {
-    try {
-      const exif = await exifr.parse(filePath, {
-        tiff: false,
-        xmp: false,
-        icc: false,
-        ihdr: false,
-        iptc: false,
-        jfif: false,
-        exif: true,
-      });
-
-      if (!exif) {
-        this.logInfo(`No EXIF data found in ${path.basename(filePath)}`);
-        return null;
-      }
-
-      // Try different EXIF date fields in order of preference
-      const dateFields = [
-        "DateTimeOriginal", // When the image was taken
-        "DateTimeDigitized", // When the image was digitized
-        "DateTime", // When the file was modified
-      ];
-
-      for (const field of dateFields) {
-        const value = exif[field];
-        if (value && typeof value === "string" && value.trim()) {
-          try {
-            // EXIF dates are typically in format: YYYY:MM:DD HH:MM:SS
-            const dateStr = value.replace(/:/, " ").replace(/:/, " "); // Replace first two colons with spaces
-            const parsedDate = new Date(dateStr);
-            if (this.isValidDate(parsedDate)) {
-              this.logInfo(`  Using ${field} date: ${parsedDate}`);
-              return parsedDate;
-            }
-          } catch {
-            this.logInfo(`  Error parsing ${field} date`);
-            continue;
-          }
-        }
-      }
-
-      return null;
-    } catch (error) {
-      this.logError(`Error reading EXIF from ${path.basename(filePath)}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Extract date from RAW file metadata using exiftool
-   */
-  private async getRawDate(filePath: string): Promise<Date | null> {
-    try {
-      const exif = await exifr.parse(filePath, {
-        tiff: true, // RAW files often use TIFF/EXIF structure
-        exif: true,
-        xmp: false,
-        icc: false,
-        ihdr: false,
-        iptc: false,
-        jfif: false,
-      });
-
-      if (!exif) {
-        this.logInfo(`No EXIF data found in RAW file ${path.basename(filePath)}`);
-        return null;
-      }
-
-      // Try different EXIF date fields in order of preference
-      const dateFields = [
-        "DateTimeOriginal", // When the image was taken
-        "DateTimeDigitized", // When the image was digitized
-        "DateTime", // When the file was modified
-      ];
-
-      for (const field of dateFields) {
-        const value = exif[field];
-        if (value && typeof value === "string" && value.trim()) {
-          try {
-            // EXIF dates are typically in format: YYYY:MM:DD HH:MM:SS
-            const dateStr = value.replace(/:/, " ").replace(/:/, " "); // Replace first two colons with spaces
-            const parsedDate = new Date(dateStr);
-            if (this.isValidDate(parsedDate)) {
-              this.logInfo(`  Using ${field} date from RAW: ${parsedDate}`);
-              return parsedDate;
-            }
-          } catch {
-            this.logInfo(`  Error parsing ${field} date in RAW`);
-            continue;
-          }
-        } else if (value instanceof Date && this.isValidDate(value)) {
-          this.logInfo(`  Using ${field} date from RAW: ${value}`);
-          return value;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      this.logError(`Error reading EXIF from RAW file ${path.basename(filePath)}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Extract date from video metadata using ffprobe
-   */
-  private async getVideoDate(filePath: string): Promise<Date | null> {
-    try {
-      const { stdout } = await execFileAsync(ffprobe.path, [
-        "-v",
-        "quiet",
-        "-print_format",
-        "json",
-        "-show_format",
-        filePath,
-      ]);
-
-      const result = JSON.parse(stdout);
-      if (result && result.format) {
-        const format = result.format;
-
-        // Try various date fields
-        const dateFields = ["creation_time", "date", "date_created", "date_modified"];
-
-        for (const field of dateFields) {
-          const value = format[field];
-          if (value && typeof value === "string") {
-            try {
-              const date = new Date(value);
-              if (this.isValidDate(date)) {
-                return date;
-              }
-            } catch {
-              continue;
-            }
-          }
-        }
-      }
-
-      return null;
-    } catch {
-      this.logError(`Warning: Could not extract video metadata from ${filePath}`);
-      return null;
     }
   }
 

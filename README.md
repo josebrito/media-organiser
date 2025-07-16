@@ -68,6 +68,21 @@ npm run lint
 npm run fix-lint
 ```
 
+## Configuring exiftool PATH
+
+This project uses `exiftool` for media metadata extraction. If your `exiftool` binary is not in a standard location, or if you want to ensure it is always found, you can configure the PATH used by the app:
+
+1. Create a `.env.local` file in the project root (this file is not versioned).
+2. Add the following line to `.env.local`:
+
+```
+EXIFTOOL_PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+```
+
+Replace the value with the directories where your `exiftool` binary is located, if different.
+
+The app will use this variable when spawning `exiftool`. If not set, it falls back to your system PATH, and then to a default fallback.
+
 ## License
 
 MIT
