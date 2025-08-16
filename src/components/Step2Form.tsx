@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, ActionPanel, Action } from "@raycast/api";
-import { ProjectAssignment } from "../types";
+import { ProjectAssignment } from "../common/types";
 
 interface Step2FormProps {
   dates: Date[];

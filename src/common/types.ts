@@ -28,3 +28,23 @@ export interface OrganizationResult {
   message: string;
   processedFiles: number;
 }
+
+// New types for aspect ratio grouping
+export interface ImageFile {
+  path: string;
+  name: string;
+  extension: string;
+  width: number;
+  height: number;
+  aspectRatio: number;
+  category: "Landscape" | "Portrait" | "Square";
+}
+
+export interface AspectRatioResult {
+  images: ImageFile[];
+  categories: {
+    Landscape: number;
+    Portrait: number;
+    Square: number;
+  };
+}

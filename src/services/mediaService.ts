@@ -1,4 +1,4 @@
-import { DateExtractionResult, Configuration, ProjectAssignment, OrganizationResult } from "../types";
+import { DateExtractionResult, Configuration, ProjectAssignment, OrganizationResult } from "../common/types";
 import { MediaProcessor } from "./mediaProcessor";
 
 export class MediaService {
@@ -22,7 +22,6 @@ export class MediaService {
       // This could be enhanced to return actual file information if needed
       return { dates, files: [] };
     } catch (error) {
-      console.error("[DEBUG] Error:", error);
       if (error instanceof Error) {
         throw error;
       }
@@ -62,7 +61,6 @@ export class MediaService {
         processedFiles: projectAssignments.length, // Approximate, as actual count is not returned
       };
     } catch (error) {
-      console.error("[DEBUG] Error:", error);
       if (error instanceof Error) {
         throw error;
       }
