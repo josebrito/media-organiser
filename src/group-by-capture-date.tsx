@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { showToast, Toast } from "@raycast/api";
-import { Configuration, ProjectAssignment, DateExtractionResult } from "./types";
+import { Configuration, ProjectAssignment, DateExtractionResult } from "./common/types";
 import { MediaService } from "./services/mediaService";
-import { ConfigStorage } from "./services/configStorage";
+import { ConfigStorage } from "./common/ConfigStorage";
 import { Step1Form } from "./components/Step1Form";
 import { Step2Form } from "./components/Step2Form";
 
@@ -104,6 +104,9 @@ export default function GroupByCaptureDate() {
         onSubmit={handleStep1Submit}
         isLoading={isLoading}
         onClearSavedConfig={handleClearSavedConfig}
+        submitTitle="Extract Dates"
+        description="Step 1: Configure source and destination folders"
+        showRenameOption={true}
       />
     );
   }

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Form, ActionPanel, Action, showToast, Toast } from "@raycast/api";
-import { Configuration } from "../types";
+import { Configuration } from "../common/types";
 
 interface Step1FormProps {
   config: Configuration;
   onSubmit: (config: Configuration) => void;
   isLoading: boolean;
   onClearSavedConfig?: () => void;
+  submitTitle?: string;
+  description?: string;
+  showRenameOption?: boolean;
 }
 
 // Extract default values to avoid duplication
@@ -24,7 +27,15 @@ const stringToArray = (value: string | undefined): string[] => (value ? [value] 
 // Helper function to convert array to string for Configuration
 const arrayToString = (value: string[]): string => value[0] || "";
 
-export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: Step1FormProps) {
+export function Step1Form({
+  config,
+  onSubmit,
+  isLoading,
+  onClearSavedConfig,
+  submitTitle = "Continue",
+  description = "Step 1: Configure source and destination folders",
+  showRenameOption = true,
+}: Step1FormProps) {
   // Consolidate form state into a single object
   const [formState, setFormState] = useState({
     sourceFolder: stringToArray(config.sourceFolder),
@@ -92,7 +103,7 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
       isLoading={isLoading}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Extract Dates" onSubmit={handleSubmit} />
+          <Action.SubmitForm title={submitTitle} onSubmit={handleSubmit} />
           {onClearSavedConfig && (
             <Action
               title="Clear Saved Configuration"
@@ -103,7 +114,7 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
         </ActionPanel>
       }
     >
-      <Form.Description text="Step 1: Configure source and destination folders" />
+      <Form.Description text={description} />
 
       <Form.FilePicker
         id="sourceFolder"
@@ -141,12 +152,14 @@ export function Step1Form({ config, onSubmit, isLoading, onClearSavedConfig }: S
         onChange={(value) => updateFormState({ moveFiles: value })}
       />
 
-      <Form.Checkbox
-        id="renameFiles"
-        label="Rename files"
-        value={formState.renameFiles}
-        onChange={(value) => updateFormState({ renameFiles: value })}
-      />
+      {showRenameOption && (
+        <Form.Checkbox
+          id="renameFiles"
+          label="Rename files"
+          value={formState.renameFiles}
+          onChange={(value) => updateFormState({ renameFiles: value })}
+        />
+      )}
     </Form>
   );
 }

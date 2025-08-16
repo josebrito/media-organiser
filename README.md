@@ -1,70 +1,116 @@
 # Media Organiser
 
-A Raycast extension for organizing photos and videos by their capture date.
+A Raycast extension that helps organize media files by different criteria.
 
 ## Features
 
-- **EXIF Metadata Extraction**: Extracts creation dates from images using EXIF data
-- **RAW File Support**: Handles camera RAW formats (RAF, CR2, NEF, ARW, etc.)
-- **Video Metadata**: Extracts dates from video files (MP4, MOV, AVI, etc.)
-- **File Organization**: Groups files into date-based folders with project names (eg. `20250714_PORTO_TRIP`)
-- **File Naming**: Option to rename files with project prefix (eg. `20250714_PORTO_TRIP_<ORIGINAL_NAME>.jpg`) or keep original names
+### Group by Capture Date
+
+- Organizes photos and videos in folders according to their capture date
+- Supports both copy and move operations
+- Optional file renaming
+- Recursive folder scanning
+- Saves last used configuration
+
+### Group by Aspect Ratio
+
+- Analyzes image files and categorizes them by aspect ratio
+- Creates three categories: Landscape, Portrait, and Square
+- Supports both copy and move operations
+- **Images only** - does not process video files
+- Recursive folder scanning
+- Saves last used configuration
+
+## Commands
+
+### 1. Group by Capture Date
+
+Organizes media files (photos and videos) into folders based on their capture date. Files are grouped by date and can be organized into project-specific folders.
+
+**Features:**
+
+- Select source and destination folders
+- Choose between copy or move operations
+- Optional file renaming
+- Project assignment for each date
+- Recursive folder scanning
+
+### 2. Group by Aspect Ratio
+
+Organizes image files into folders based on their aspect ratio. Images are categorized as Landscape, Portrait, or Square and placed in corresponding subfolders.
+
+**Features:**
+
+- Select source and destination folders
+- Choose between copy or move operations
+- **No file renaming option** - original filenames are always preserved
+- Automatic aspect ratio detection using image metadata
+- Creates three subfolders: Landscape, Portrait, Square
+- Recursive folder scanning
+
+## Supported File Types
+
+### Group by Capture Date
+
+- Photos: JPG, JPEG, PNG, GIF, BMP, TIFF, WebP
+- Videos: MP4, MOV, AVI, MKV, and other common video formats
+
+### Group by Aspect Ratio
+
+- **Images only**: JPG, JPEG, PNG, GIF, BMP, TIFF, WebP
+- Videos are not supported for aspect ratio analysis
+
+## Installation
+
+1. Install the extension from the Raycast Store
+2. Use the command palette to search for "Media Organiser"
+3. Choose your desired command
 
 ## Usage
 
-### Raycast Extension
+### Step 1: Configuration
 
-1. Open Raycast
-2. Search for "Organise Media"
-3. Select source and destination folders
-4. Assign project names to dates
+1. Select the source folder containing your media files
+2. Choose whether the destination is the same as the source
+3. If different, select a destination folder
+4. Choose whether to move or copy files
+5. For capture date grouping, choose whether to rename files
 
-## Architecture
+### Step 2: Processing
 
-### Supported File Types
+- **Capture Date**: Review extracted dates and assign project names
+- **Aspect Ratio**: Images are automatically analyzed and organized immediately
 
-**Images:**
+## Technical Details
 
-- JPEG (.jpg, .jpeg) - EXIF metadata extraction
-- RAW formats (.raf, .raw, .cr2, .nef, .arw, .gpr) - Uses `exifr` for metadata extraction
+- Uses `exifr` for extracting image dimensions from EXIF metadata
+- Implements fallback methods for image dimension detection:
+  - EXIF data extraction (most accurate)
+  - File header parsing for JPEG, PNG, and GIF formats
+  - File size estimation as final fallback
+- Uses `exifr` for extracting metadata from media files
+- Recursively scans folders for media files
+- Supports both copy and move operations
+- Configuration is automatically saved for future use
 
-**Videos:**
+## Requirements
 
-- MP4, MOV, AVI, MKV, WMV, FLV, WebM, M4V - Uses `ffprobe` for metadata extraction
-
-### Date Extraction Priority
-
-1. **EXIF DateTimeOriginal** (when image was taken)
-2. **EXIF DateTimeDigitized** (when image was digitized)
-3. **EXIF DateTime** (when file was modified)
-4. **RAW metadata** (for RAW files)
-5. **Video metadata** (for video files)
-6. **File creation date** (fallback)
+- macOS 10.15 or later
+- Raycast 1.0 or later
 
 ## Development
 
-### Install Dependencies
-
 ```bash
+# Install dependencies
 npm install
-```
 
-### Building
-
-```bash
-npm run build
-```
-
-### Development Mode
-
-```bash
+# Run in development mode
 npm run dev
-```
 
-### Linting
+# Build for production
+npm run build
 
-```bash
-npm run lint
+# Fix linting issues
 npm run fix-lint
 ```
 

@@ -1,5 +1,5 @@
 import { LocalStorage } from "@raycast/api";
-import { Configuration } from "../types";
+import { Configuration } from "../common/types";
 
 const CONFIG_STORAGE_KEY = "lastUsedConfiguration";
 

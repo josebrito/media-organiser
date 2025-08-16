@@ -1,4 +1,4 @@
-import { DateExtractionResult, Configuration, ProjectAssignment, OrganizationResult } from "../types";
+import { DateExtractionResult, Configuration, ProjectAssignment, OrganizationResult } from "../common/types";
 import { MediaProcessor } from "./mediaProcessor";
 
 export class MediaService {
