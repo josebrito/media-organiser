@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { showToast, Toast } from "@raycast/api";
+import { showToast, Toast, popToRoot, open } from "@raycast/api";
 import { Configuration, ProjectAssignment, DateExtractionResult } from "./common/types";
 import { MediaService } from "./services/mediaService";
 import { ConfigStorage } from "./common/ConfigStorage";
@@ -70,6 +70,12 @@ export default function GroupByCaptureDate() {
         title: "Files organized successfully",
         message: result.message,
       });
+
+      // Open the destination folder and close Raycast
+      const destinationPath = config.sameAsSource ? config.sourceFolder : config.destinationFolder;
+      await open(destinationPath);
+      popToRoot();
+
       // Reset to step 1 for next use
       setCurrentStep(1);
       setDateExtractionResult(null);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { showToast, Toast } from "@raycast/api";
+import { showToast, Toast, popToRoot, open } from "@raycast/api";
 import { Configuration } from "./common/types";
 import { AspectRatioService } from "./services/aspectRatioService";
 import { ConfigStorage } from "./common/ConfigStorage";
@@ -55,6 +55,11 @@ export default function GroupByAspectRatio() {
         title: "Images organized successfully",
         message: `Processed ${result.images.length} images: ${result.categories.Landscape} Landscape, ${result.categories.Portrait} Portrait, ${result.categories.Square} Square. ${organizationResult.message}`,
       });
+
+      // Open the destination folder and close Raycast
+      const destinationPath = finalConfig.sameAsSource ? finalConfig.sourceFolder : finalConfig.destinationFolder;
+      await open(destinationPath);
+      popToRoot();
 
       // Reset form for next use
       setConfig({
