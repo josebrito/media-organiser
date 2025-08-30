@@ -12,6 +12,10 @@ Organizes photos and videos into folders based on their capture date.
 
 Organizes images into Landscape, Portrait, and Square folders.
 
+### Bulk Rename Files
+
+Renames files with custom prefix, suffix, and optional original name preservation.
+
 ## Installation
 
 - Download this repository to your computer

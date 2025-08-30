@@ -48,3 +48,18 @@ export interface AspectRatioResult {
     Square: number;
   };
 }
+
+// New types for bulk rename functionality
+export interface BulkRenameConfig {
+  sourceFolder: string;
+  prefix: string;
+  suffix: string;
+  includeOriginalName: boolean;
+}
+
+export interface BulkRenameResult {
+  success: boolean;
+  message: string;
+  processedFiles: number;
+  renamedFiles: string[];
+}
